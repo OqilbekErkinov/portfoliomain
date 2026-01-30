@@ -300,18 +300,21 @@
   animation: profileImageEnter 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   animation-delay: 0.4s;
 }
-  .fa-phone {
-    margin-top: 12px;
-    margin-left: 8px;
-  }
-  .fa-arrow-down{
-    margin-top: 1rem;
-    margin-left: 1rem;
-  }
+/* .fa-arrow-down {
+  margin-bottom: 0.7rem;
+  margin-left: 1rem;
+} */
 
 @media (max-width: 768px) {
+  /* .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  .bento-card {
+    padding: 1.5rem !important;
+  } */
   .hero-image-container {
-    height: 180px;
+    height: 200px !important;
   }
   .arsenalhh h3,
   .arsenalhh p {
@@ -321,8 +324,8 @@
     height: 108px;
   }
   .bento-card {
-    display: flex;
-    flex-direction: row;
+    display: flex !important;
+    flex-direction: row !important;
   }
   .bento-card .ikkinchi {
     margin-right: 5rem;
@@ -343,10 +346,13 @@
     line-height: 1.2;
   }
   .kingquote {
-    margin-top: 5rem;
+    margin-top: 5rem !important;
   }
   .experience-section,
-  .project-section, .contact-section, .skills-section, .about-section {
+  .project-section,
+  .contact-section,
+  .skills-section,
+  .about-section {
     padding-top: 2rem !important;
     padding-bottom: 2rem !important;
   }
@@ -354,24 +360,19 @@
     align-items: center !important;
   }
   .project-filters {
-    gap: 0.1rem;
+    gap: 0.1rem !important;
     margin-bottom: 1.6rem;
   }
   footer {
     margin-top: 2rem !important;
   }
-  .fa-phone {
-    margin-top: 12px;
-    margin-left: 12px;
-  }
-  .fa-arrow-down{
-    margin-top: 1rem;
-    margin-left: 1px;
+  .fa-arrow-down {
+    margin-top: 0.5rem;
+    margin-left: 1.5px;
   }
   .about-h2 {
     text-align: center;
   }
-
 }
 /* === FIX: Skills descriptions visible on mobile === */
 @media (max-width: 768px) {
