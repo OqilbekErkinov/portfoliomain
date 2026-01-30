@@ -331,6 +331,10 @@
   .bento-card .ikkinchi {
     margin-right: 5rem;
   }
+  .container {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
 }
 /* === FIX: My Arsenal "Based in" mobile layout === */
 @media (max-width: 768px) {
