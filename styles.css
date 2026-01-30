@@ -315,6 +315,7 @@
   } */
   .hero-image-container {
     height: 200px !important;
+    margin-top: 2.5rem;
   }
   .arsenalhh h3,
   .arsenalhh p {
@@ -362,6 +363,7 @@
   .project-filters {
     gap: 0.1rem !important;
     margin-bottom: 1.6rem;
+    justify-content: center;
   }
   footer {
     margin-top: 2rem !important;
@@ -372,6 +374,10 @@
   }
   .about-h2 {
     text-align: center;
+  }
+  .filter-btn {
+    padding-left: 1.2rem;
+    padding-right: 1.2rem;
   }
 }
 /* === FIX: Skills descriptions visible on mobile === */

@@ -1,6 +1,6 @@
-![Logo](Demo.png)
+![Logo](Demo.jpg)
 
-# Amine – Creative Developer Portfolio 🚀
+# King – Creative Developer Portfolio 🚀
 
 A modern, high-performance personal portfolio website showcasing my work as a **Frontend Developer & UI/UX Designer**.  
 Built with a strong focus on **animations, performance, and user experience**.
@@ -9,7 +9,7 @@ Built with a strong focus on **animations, performance, and user experience**.
 
 ## Live Demo 🚀
 
-You can view the live website here: [Live Demo](https://silver-pothos-bdbfe5.netlify.app/)
+You can view the live website here: [Live Demo](https://oqqilbekerkinov.vercel.app/)
 
 ---
 
@@ -44,34 +44,32 @@ You can view the live website here: [Live Demo](https://silver-pothos-bdbfe5.net
 ## 📂 Project Structure
 
 ```bash
-📦 Portfolio9
  ┣ 📜 index.html          # Main HTML file
  ┣ 📜 style.css           # Website styling
  ┣ 📜 script.js           # Main JavaScript file
  ┣ 📂 images              # Images and logos
  ┗ 📜 README.md           # Project documentation
 ```
----
 
+---
 
 ## 🚀 How to Use / Customize
 
 1. **Clone the repository:**
 
- ---
+---
 
 ## 📬 Contact
 
-- Email: aminehamzaoui1925@gmail.com   
-- Location: Boumerdès, Algeria  
-- LinkedIn: [LinkedIn](https://www.linkedin.com/in/mohamed-amine-hamzaoui-a2453a35b/)  
-- GitHub: [GitHub](https://github.com/Saboo24)  
-- Instagram: [Instagram](https://www.instagram.com/a__m.i.n__e/?utm_source=ig_web_button_share_sheet)
+- Email: erkinovoqilbek@gmail.com
+- Location: Fergana, Uzbekistan
+- GitHub: [GitHub](https://github.com/OqilbekErkinov/)
+- Instagram: [Instagram](https://www.instagram.com/king_006x/)
+- Telegram: [Telegram](https://t.me/King_006x)
 
 ---
 
-Made with ❤️ by **Amine Hamzaoui**
-
 ```bash
-git clone https://github.com/Saboo24/Portfolio9.git
+git clone https://github.com/OqilbekErkinov/portfoliomain
 
+```
