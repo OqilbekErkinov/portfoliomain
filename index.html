@@ -92,6 +92,10 @@
       class="fixed inset-0 z-[1] bg-noise pointer-events-none opacity-40 mix-blend-overlay"
     ></div>
 
+    <!-- Custom Cursor -->
+    <div id="custom-cursor" class="fixed w-8 h-8 border border-primary rounded-full pointer-events-none z-[10000] hidden md:block mix-blend-difference transition-transform duration-300 -translate-x-1/2 -translate-y-1/2"></div>
+    <div id="custom-cursor-dot" class="fixed w-1 h-1 bg-primary rounded-full pointer-events-none z-[10000] hidden md:block -translate-x-1/2 -translate-y-1/2"></div>
+
     <!-- Preloader -->
     <div
       id="preloader"
@@ -1410,6 +1414,7 @@ Focused on clean layout, accessibility, and clarity for a healthcare audience."
     >
       <i class="fas fa-arrow-up"></i>
     </button>
+
 
     <script src="script.js"></script>
   </body>

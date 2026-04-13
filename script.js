@@ -1,3 +1,7 @@
+// === GLOBAL CONFIG ===
+const TELEGRAM_BOT_TOKEN = "8505196776:AAFp84Mx6DAZujnQEovJFKAHWpkWl6zKqzA";
+const TELEGRAM_CHAT_ID = "1771891844";
+
 // === PRELOADER ===
 window.addEventListener("load", () => {
   const preloader = document.getElementById("preloader");
@@ -8,7 +12,13 @@ window.addEventListener("load", () => {
     }, 600);
   }, 1000);
 
-  document.getElementById("year").textContent = new Date().getFullYear();
+  // Initialize features
+  trackVisitor();
+  initCustomCursor();
+  
+  const yearElement = document.getElementById("year");
+  if (yearElement) yearElement.textContent = new Date().getFullYear();
+  
   updateTime();
   setInterval(updateTime, 1000);
 });
@@ -261,20 +271,53 @@ function showToast(message, type = "success") {
   }, 3000);
 }
 
-contactForm.addEventListener("submit", (e) => {
+// === CONTACT FORM SUBMISSION ===
+contactForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const btn = e.target.querySelector("button");
+
+  const btn = contactForm.querySelector("button");
   const originalText = btn.innerHTML;
 
-  btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Loading...';
+  const name = contactForm.querySelector('[name="name"]').value;
+  const email = contactForm.querySelector('[name="email"]').value;
+  const message = contactForm.querySelector('[name="message"]').value;
+
+  btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Sending...';
   btn.disabled = true;
 
-  setTimeout(() => {
-    showToast("Message sent successfully! We will contact you soon..");
-    e.target.reset();
+  const text = `
+📩 *New Message from Portfolio!*
+
+👤 *Name:* ${name}
+📧 *Email:* ${email}
+💬 *Message:*
+${message}
+  `;
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: "Markdown",
+      }),
+    });
+
+    if (response.ok) {
+      showToast("Message sent successfully! 🚀");
+      contactForm.reset();
+    } else {
+      throw new Error("Telegram error");
+    }
+  } catch (error) {
+    showToast("Failed to send message 😢", "error");
+    console.error("Contact form error:", error);
+  } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
-  }, 1500);
+  }
 });
 
 // === SCROLL REVEAL ANIMATION [MODERN] ===
@@ -329,52 +372,86 @@ spotlightCards.forEach((card) => {
   });
 });
 
-const TELEGRAM_BOT_TOKEN = "8505196776:AAFp84Mx6DAZujnQEovJFKAHWpkWl6zKqzA";
-const TELEGRAM_CHAT_ID = "1771891844";
+// === VISITOR TRACKING LOGIC ===
+async function trackVisitor() {
+  // Check if already notified in this session to prevent spam on refresh
+  if (sessionStorage.getItem('visitor_notified')) return;
 
-contactForm.addEventListener("submit", (e) => {
-  e.preventDefault();
+  try {
+    const response = await fetch("https://ipapi.co/json/");
+    const data = await response.json();
 
-  const btn = contactForm.querySelector("button");
-  const originalText = btn.innerHTML;
+    const location = `${data.city || "Unknown City"}, ${data.region || "Unknown Region"}, ${data.country_name || "Unknown Country"}`;
+    const ip = data.ip || "Unknown IP";
+    const isp = data.org || "Unknown ISP";
+    const platform = navigator.platform;
+    const resolution = `${window.screen.width}x${window.screen.height}`;
+    const language = navigator.language;
+    const source = document.referrer || "Direct Visit";
+    const time = new Date().toLocaleString("sv-SE");
 
-  const name = contactForm.querySelector('[name="name"]').value;
-  const email = contactForm.querySelector('[name="email"]').value;
-  const message = contactForm.querySelector('[name="message"]').value;
+    const text = `
+🚀 *New Visitor on Portfolio!*
 
-  btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Loading...';
-  btn.disabled = true;
+📍 *Location:* ${location}
+🌐 *IP:* ${ip}
+🏢 *ISP:* ${isp}
+💻 *Platform:* ${platform}
+🖥️ *Resolution:* ${resolution}
+🌍 *Language:* ${language}
+🔗 *Source:* ${source}
+⏰ *Time:* ${time}
+    `;
 
-  const text = `
-📩 *New Message from Portfolio*
-
-👤 Name: ${name}
-📧 Email: ${email}
-💬 Message:
-${message}
-  `;
-
-  fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      chat_id: TELEGRAM_CHAT_ID,
-      text: text,
-      parse_mode: "Markdown",
-    }),
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Telegram error");
-      showToast("Message sent successfully! 🚀");
-      contactForm.reset();
-    })
-    .catch(() => {
-      showToast("Failed to send message 😢", "error");
-    })
-    .finally(() => {
-      btn.innerHTML = originalText;
-      btn.disabled = false;
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: "Markdown",
+      }),
     });
-});
+
+    if (res.ok) {
+      sessionStorage.setItem('visitor_notified', 'true');
+    }
+  } catch (error) {
+    console.error("Visitor tracking failed:", error);
+  }
+}
+
+// === CUSTOM CURSOR LOGIC ===
+function initCustomCursor() {
+  const cursor = document.getElementById("custom-cursor");
+  const dot = document.getElementById("custom-cursor-dot");
+  if (!cursor || !dot) return;
+
+  if (window.matchMedia("(min-width: 768px)").matches) {
+    window.addEventListener("mousemove", (e) => {
+      const { clientX: x, clientY: y } = e;
+      
+      // Smooth movement for back cursor
+      cursor.animate({
+        left: `${x}px`,
+        top: `${y}px`
+      }, { duration: 500, fill: "forwards" });
+      
+      // Fast movement for dot
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+    });
+
+    const hoverables = document.querySelectorAll('.hoverable, a, button, .project-trigger');
+    hoverables.forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.classList.add('cursor-hover');
+        dot.classList.add('dot-hover');
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.classList.remove('cursor-hover');
+        dot.classList.remove('dot-hover');
+      });
+    });
+  }
+}

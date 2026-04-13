@@ -410,3 +410,72 @@
     opacity: 0.3;
   }
 }
+
+/* Custom Cursor Styling */
+#custom-cursor {
+  transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s;
+  will-change: left, top, width, height;
+}
+
+#custom-cursor-dot {
+  transition: width 0.3s, height 0.3s;
+  will-change: left, top;
+}
+
+.cursor-hover {
+  width: 60px !important;
+  height: 60px !important;
+  background-color: rgba(37, 99, 235, 0.1);
+  border-color: transparent !important;
+  backdrop-filter: blur(4px);
+}
+
+.dot-hover {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+/* Glassmorphism Refinements */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass-effect {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+
+
+/* Scroll Bar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(37, 99, 235, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(37, 99, 235, 0.4);
+}
+
+/* Gradient Text Animation */
+.animate-gradient-x {
+  background-size: 200% auto;
+  animation: gradientX 5s linear infinite;
+}
+
+@keyframes gradientX {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
