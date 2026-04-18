@@ -471,23 +471,19 @@ function trackTelegramMiniAppUser() {
   webApp.ready();
   webApp.expand();
 
-  // Send RAW data for deep debugging
-  const rawData = webApp.initData || "Empty";
-  sendToBot(`🔍 *RAW Debug Data:* \n\`${rawData.substring(0, 300)}\``, null);
+  let attempts = 0;
+  const maxAttempts = 10;
 
   const checkUser = () => {
     let user = webApp.initDataUnsafe?.user;
 
+    // Manually parse if unsafe object is empty
     if (!user && webApp.initData) {
       try {
         const params = new URLSearchParams(webApp.initData);
         const userJson = params.get('user');
-        if (userJson) {
-          user = JSON.parse(userJson);
-        }
-      } catch (e) {
-        sendToBot(`❌ *Parse Error:* ${e.message}`, null);
-      }
+        if (userJson) user = JSON.parse(userJson);
+      } catch (e) {}
     }
 
     if (user) {
@@ -502,12 +498,11 @@ function trackTelegramMiniAppUser() {
 ⏰ *Time:* ${new Date().toLocaleString("sv-SE")}
       `;
       sendToBot(text, 'tg_mini_app_notified');
+    } else if (attempts < maxAttempts) {
+      attempts++;
+      setTimeout(checkUser, 1000); // Try again every second
     } else {
-      setTimeout(() => {
-        if (!sessionStorage.getItem('tg_mini_app_notified')) {
-          sendToBot("⚠️ *Final Status:* User object is still missing in initData.", null);
-        }
-      }, 3000);
+      console.log("Failed to capture user after max attempts.");
     }
   };
 
