@@ -465,7 +465,6 @@ function initCustomCursor() {
 // === TELEGRAM MINI APP TRACKING [FINAL & ROBUST] ===
 function trackTelegramMiniAppUser() {
   const webApp = window.Telegram?.WebApp;
-  
   if (!webApp) return;
 
   webApp.ready();
@@ -477,7 +476,6 @@ function trackTelegramMiniAppUser() {
   const checkUser = () => {
     let user = webApp.initDataUnsafe?.user;
 
-    // Manually parse if unsafe object is empty
     if (!user && webApp.initData) {
       try {
         const params = new URLSearchParams(webApp.initData);
@@ -488,21 +486,19 @@ function trackTelegramMiniAppUser() {
 
     if (user) {
       const text = `
-✅ *Telegram User Captured!*
+<b>🚀 Telegram User Captured!</b>
 
-👤 *Name:* ${user.first_name} ${user.last_name || ""}
-🔗 *Username:* @${user.username || "no_username"}
-🆔 *ID:* ${user.id}
-🌍 *Lang:* ${user.language_code || "unknown"}
-💎 *Premium:* ${user.is_premium ? "Yes" : "No"}
-⏰ *Time:* ${new Date().toLocaleString("sv-SE")}
+<b>👤 Name:</b> ${user.first_name} ${user.last_name || ""}
+<b>🔗 Username:</b> @${user.username || "no_username"}
+<b>🆔 ID:</b> <code>${user.id}</code>
+<b>🌍 Lang:</b> ${user.language_code || "unknown"}
+<b>💎 Premium:</b> ${user.is_premium ? "Yes" : "No"}
+<b>⏰ Time:</b> ${new Date().toLocaleString("sv-SE")}
       `;
       sendToBot(text, 'tg_mini_app_notified');
     } else if (attempts < maxAttempts) {
       attempts++;
-      setTimeout(checkUser, 1000); // Try again every second
-    } else {
-      console.log("Failed to capture user after max attempts.");
+      setTimeout(checkUser, 1000);
     }
   };
 
@@ -513,9 +509,6 @@ function trackTelegramMiniAppUser() {
 trackTelegramMiniAppUser();
 
 async function sendToBot(text, storageKey) {
-  // Debug mode: ignore session storage for now to see every attempt
-  // if (storageKey && sessionStorage.getItem(storageKey)) return;
-
   try {
     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: "POST",
@@ -523,7 +516,7 @@ async function sendToBot(text, storageKey) {
       body: JSON.stringify({
         chat_id: TELEGRAM_CHAT_ID,
         text: text,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
       }),
     });
     if (storageKey) sessionStorage.setItem(storageKey, 'true');
