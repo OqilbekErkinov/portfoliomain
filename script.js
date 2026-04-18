@@ -388,7 +388,7 @@ async function getTechnicalInfo() {
   const ua = navigator.userAgent;
   let browser = "Other";
   let bVer = "";
-  
+
   const bMatch = ua.match(/(chrome|safari|firefox|edge|opr(?=\/))\/?\s*(\d+)/i);
   if (bMatch) {
     browser = bMatch[1];
@@ -419,7 +419,7 @@ async function getTechnicalInfo() {
       const b = await navigator.getBattery();
       battery = `${Math.round(b.level * 100)}% (${b.charging ? "⚡ Charging" : "🔋 Discharging"})`;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   return { browser: `${browser} ${bVer}`.trim(), os: `${os} ${osVer}`.trim(), battery };
 }
@@ -469,7 +469,7 @@ function trackTelegramMiniAppUser() {
         const params = new URLSearchParams(webApp.initData);
         const userJson = params.get('user');
         if (userJson) user = JSON.parse(userJson);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (user) {
@@ -499,13 +499,13 @@ async function sendUnifiedMessage(tgUser = null) {
 
   if (tgUser) {
     photo = tgUser.photo_url;
-    text = `<b>🌟 Premium Telegram Visitor!</b>\n\n`;
+    text = `<b>🌟 New Telegram Visitor!</b>\n\n`;
     text += `<b>👤 Name:</b> ${tgUser.first_name} ${tgUser.last_name || ""}\n`;
     text += `<b>🔗 Username:</b> @${tgUser.username || "no_username"}\n`;
     text += `<b>🆔 ID:</b> <code>${tgUser.id}</code>\n`;
     text += `<b>🌍 Lang:</b> ${tgUser.language_code || "unknown"}\n`;
     text += `<b>💎 Premium:</b> ${tgUser.is_premium ? "Yes" : "No"}\n\n`;
-    
+
     // Backup photo link if it fails to send as photo
     if (photo) text += `🖼 <b>Photo Link:</b> <a href="${photo}">View Profile Photo</a>\n\n`;
   } else {
@@ -544,7 +544,7 @@ function initSectionTracking() {
         if (id && !notifiedSections.has(id)) {
           notifiedSections.add(id);
           const duration = Math.round((Date.now() - startTime) / 1000);
-          const timeText = duration > 60 ? `${Math.floor(duration/60)}m ${duration%60}s` : `${duration}s`;
+          const timeText = duration > 60 ? `${Math.floor(duration / 60)}m ${duration % 60}s` : `${duration}s`;
           sendToBot(`👀 User is now viewing: <b>${id.toUpperCase()}</b>\n⏱ <b>Session Duration:</b> ${timeText}`, null, true);
         }
       }
@@ -591,13 +591,13 @@ async function sendToBot(text, photo = null, silent = false) {
 let exitNotified = false;
 function handleExit() {
   if (exitNotified) return;
-  
+
   const duration = Math.round((Date.now() - startTime) / 1000);
-  const timeText = duration > 60 ? `${Math.floor(duration/60)}m ${duration%60}s` : `${duration}s`;
+  const timeText = duration > 60 ? `${Math.floor(duration / 60)}m ${duration % 60}s` : `${duration}s`;
   const name = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || "Visitor";
 
   const text = `👋 <b>User Left Site</b>\n👤 <b>Name:</b> ${name}\n⏱ <b>Total Time Spent:</b> ${timeText}`;
-  
+
   // Use keepalive to ensure the request finishes even if the tab is closing
   fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: "POST",
@@ -610,7 +610,7 @@ function handleExit() {
       disable_notification: true
     }),
   });
-  
+
   exitNotified = true;
 }
 
