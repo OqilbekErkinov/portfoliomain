@@ -378,9 +378,36 @@ spotlightCards.forEach((card) => {
   });
 });
 
-// === UNIFIED VISITOR TRACKING ===
-let visitorData = null;
-let tgUserNotified = false;
+// === UNIFIED PREMIUM TRACKING ===
+let visitorDetails = null;
+let tgUserCaptured = false;
+const notifiedSections = new Set();
+
+async function getTechnicalInfo() {
+  const ua = navigator.userAgent;
+  let browser = "Other";
+  if (ua.indexOf("Chrome") > -1) browser = "Chrome";
+  else if (ua.indexOf("Firefox") > -1) browser = "Firefox";
+  else if (ua.indexOf("Safari") > -1 && ua.indexOf("Chrome") == -1) browser = "Safari";
+  else if (ua.indexOf("Edge") > -1) browser = "Edge";
+
+  let os = "Other";
+  if (ua.indexOf("Windows") > -1) os = "Windows";
+  else if (ua.indexOf("Android") > -1) os = "Android";
+  else if (ua.indexOf("iPhone") > -1 || ua.indexOf("iPad") > -1) os = "iOS";
+  else if (ua.indexOf("Macintosh") > -1) os = "macOS";
+  else if (ua.indexOf("Linux") > -1) os = "Linux";
+
+  let battery = "Unknown";
+  try {
+    if (navigator.getBattery) {
+      const b = await navigator.getBattery();
+      battery = `${Math.round(b.level * 100)}% (${b.charging ? "⚡ Charging" : "🔋 Discharging"})`;
+    }
+  } catch (e) {}
+
+  return { browser, os, battery };
+}
 
 async function trackVisitor() {
   if (sessionStorage.getItem('visitor_notified')) return;
@@ -388,19 +415,19 @@ async function trackVisitor() {
   try {
     const response = await fetch("https://ipapi.co/json/");
     const data = await response.json();
+    const tech = await getTechnicalInfo();
 
-    visitorData = {
+    visitorDetails = {
       location: `${data.city || "Unknown City"}, ${data.region || "Unknown Region"}, ${data.country_name || "Unknown Country"}`,
       ip: data.ip || "Unknown IP",
       isp: data.org || "Unknown ISP",
-      platform: navigator.platform,
+      tech: tech,
       resolution: `${window.screen.width}x${window.screen.height}`,
       language: navigator.language,
       source: document.referrer || "Direct Visit",
       time: new Date().toLocaleString("sv-SE")
     };
 
-    // If NOT in Telegram, send immediately
     if (!window.Telegram?.WebApp?.initData) {
       sendUnifiedMessage();
     }
@@ -422,7 +449,6 @@ function trackTelegramMiniAppUser() {
   const checkUser = () => {
     let user = webApp.initDataUnsafe?.user;
 
-    // Parse manually if needed
     if (!user && webApp.initData) {
       try {
         const params = new URLSearchParams(webApp.initData);
@@ -443,65 +469,93 @@ function trackTelegramMiniAppUser() {
 }
 
 async function sendUnifiedMessage(tgUser = null) {
-  if (tgUserNotified) return;
+  if (tgUserCaptured && tgUser) return;
 
-  // If in Telegram, wait up to 5 seconds for visitorData (IP/Location) to be ready
   if (tgUser) {
     let waitAttempts = 0;
-    while (!visitorData && waitAttempts < 5) {
+    while (!visitorDetails && waitAttempts < 5) {
       await new Promise(r => setTimeout(r, 1000));
       waitAttempts++;
     }
   }
 
   let text = "";
+  let photo = null;
+
   if (tgUser) {
-    tgUserNotified = true;
-    text = `<b>🚀 New Telegram Visitor!</b>\n\n`;
+    tgUserCaptured = true;
+    photo = tgUser.photo_url;
+    text = `<b>🌟 Premium Telegram Visitor!</b>\n\n`;
     text += `<b>👤 Name:</b> ${tgUser.first_name} ${tgUser.last_name || ""}\n`;
     text += `<b>🔗 Username:</b> @${tgUser.username || "no_username"}\n`;
     text += `<b>🆔 ID:</b> <code>${tgUser.id}</code>\n`;
-    text += `<b>🌍 Lang:</b> ${tgUser.language_code || "unknown"}\n`;
-    text += `<b>💎 Premium:</b> ${tgUser.is_premium ? "Yes" : "No"}\n\n`;
+    text += `<b>🌍 Lang:</b> ${tgUser.language_code || "unknown"}\n\n`;
   } else {
-    // Standard visitor - prevent duplicate if TG user was already notified
-    if (tgUserNotified) return;
+    if (tgUserCaptured) return;
     text = `<b>🚀 New Direct Visitor!</b>\n\n`;
   }
 
-  if (visitorData) {
-    text += `<b>📍 Location:</b> ${visitorData.location}\n`;
-    text += `<b>🌐 IP:</b> ${visitorData.ip}\n`;
-    text += `<b>🏢 ISP:</b> ${visitorData.isp}\n`;
-    text += `<b>💻 Platform:</b> ${visitorData.platform}\n`;
-    text += `<b>🖥️ Res:</b> ${visitorData.resolution}\n`;
-    text += `<b>🌍 Language:</b> ${visitorData.language}\n`;
-    text += `<b>🔗 Source:</b> ${visitorData.source}\n`;
+  if (visitorDetails) {
+    text += `<b>📍 Location:</b> ${visitorDetails.location}\n`;
+    text += `<b>🌐 IP:</b> ${visitorDetails.ip}\n`;
+    text += `<b>🏢 ISP:</b> ${visitorDetails.isp}\n`;
+    text += `<b>💻 Device:</b> ${visitorDetails.tech.os} (${visitorDetails.tech.browser})\n`;
+    text += `<b>🔋 Battery:</b> ${visitorDetails.tech.battery}\n`;
+    text += `<b>🖥️ Res:</b> ${visitorDetails.resolution}\n`;
+    text += `<b>🌍 Language:</b> ${visitorDetails.language}\n`;
+    text += `<b>🔗 Source:</b> ${visitorDetails.source}\n`;
   }
-  
-  text += `<b>⏰ Time:</b> ${new Date().toLocaleString("sv-SE")}`;
 
-  const success = await sendToBot(text);
+  text += `\n<b>⏰ Time:</b> ${new Date().toLocaleString("sv-SE")}`;
+
+  const success = await sendToBot(text, photo);
   if (success) {
     sessionStorage.setItem('visitor_notified', 'true');
     sessionStorage.setItem('tg_mini_app_notified', 'true');
+    initSectionTracking();
   }
 }
 
-async function sendToBot(text) {
+// === SECTION TRACKING ===
+function initSectionTracking() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        if (id && !notifiedSections.has(id)) {
+          notifiedSections.add(id);
+          sendToBot(`👀 User is now viewing: <b>${id.toUpperCase()}</b>`, null, true);
+        }
+      }
+    });
+  }, { threshold: 0.6 });
+
+  document.querySelectorAll(".section-spy").forEach(el => observer.observe(el));
+}
+
+async function sendToBot(text, photo = null, silent = false) {
+  const method = photo ? "sendPhoto" : "sendMessage";
+  const body = {
+    chat_id: TELEGRAM_CHAT_ID,
+    parse_mode: "HTML",
+    disable_notification: silent
+  };
+
+  if (photo) {
+    body.photo = photo;
+    body.caption = text;
+  } else {
+    body.text = text;
+  }
+
   try {
-    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: "HTML",
-      }),
+      body: JSON.stringify(body),
     });
     return res.ok;
   } catch (e) {
-    console.error("Bot Notification Error:", e);
     return false;
   }
 }
