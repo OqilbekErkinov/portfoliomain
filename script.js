@@ -381,7 +381,10 @@ spotlightCards.forEach((card) => {
   });
 });
 
-// === VISITOR TRACKING LOGIC ===
+// === UNIFIED VISITOR TRACKING ===
+let visitorData = null;
+let tgUserNotified = false;
+
 async function trackVisitor() {
   if (sessionStorage.getItem('visitor_notified')) return;
 
@@ -389,45 +392,113 @@ async function trackVisitor() {
     const response = await fetch("https://ipapi.co/json/");
     const data = await response.json();
 
-    const location = `${data.city || "Unknown City"}, ${data.region || "Unknown Region"}, ${data.country_name || "Unknown Country"}`;
-    const ip = data.ip || "Unknown IP";
-    const isp = data.org || "Unknown ISP";
-    const platform = navigator.platform;
-    const resolution = `${window.screen.width}x${window.screen.height}`;
-    const language = navigator.language;
-    const source = document.referrer || "Direct Visit";
-    const time = new Date().toLocaleString("sv-SE");
+    visitorData = {
+      location: `${data.city || "Unknown City"}, ${data.region || "Unknown Region"}, ${data.country_name || "Unknown Country"}`,
+      ip: data.ip || "Unknown IP",
+      isp: data.org || "Unknown ISP",
+      platform: navigator.platform,
+      resolution: `${window.screen.width}x${window.screen.height}`,
+      language: navigator.language,
+      source: document.referrer || "Direct Visit",
+      time: new Date().toLocaleString("sv-SE")
+    };
 
-    const text = `
-🚀 *New Visitor on Portfolio!*
+    // If NOT in Telegram, send immediately
+    if (!window.Telegram?.WebApp?.initData) {
+      sendUnifiedMessage();
+    }
+  } catch (error) {
+    console.error("Visitor tracking failed:", error);
+  }
+}
 
-📍 *Location:* ${location}
-🌐 *IP:* ${ip}
-🏢 *ISP:* ${isp}
-💻 *Platform:* ${platform}
-🖥️ *Resolution:* ${resolution}
-🌍 *Language:* ${language}
-🔗 *Source:* ${source}
-⏰ *Time:* ${time}
-    `;
+function trackTelegramMiniAppUser() {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp || !webApp.initData) return;
 
+  webApp.ready();
+  webApp.expand();
+
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  const checkUser = () => {
+    let user = webApp.initDataUnsafe?.user;
+
+    // Parse manually if needed
+    if (!user && webApp.initData) {
+      try {
+        const params = new URLSearchParams(webApp.initData);
+        const userJson = params.get('user');
+        if (userJson) user = JSON.parse(userJson);
+      } catch (e) {}
+    }
+
+    if (user) {
+      sendUnifiedMessage(user);
+    } else if (attempts < maxAttempts) {
+      attempts++;
+      setTimeout(checkUser, 1000);
+    }
+  };
+
+  checkUser();
+}
+
+async function sendUnifiedMessage(tgUser = null) {
+  if (tgUserNotified) return;
+
+  let text = "";
+  if (tgUser) {
+    tgUserNotified = true;
+    text = `<b>🚀 New Telegram Visitor!</b>\n\n`;
+    text += `<b>👤 Name:</b> ${tgUser.first_name} ${tgUser.last_name || ""}\n`;
+    text += `<b>🔗 Username:</b> @${tgUser.username || "no_username"}\n`;
+    text += `<b>🆔 ID:</b> <code>${tgUser.id}</code>\n`;
+    text += `<b>💎 Premium:</b> ${tgUser.is_premium ? "Yes" : "No"}\n\n`;
+  } else {
+    text = `<b>🚀 New Direct Visitor!</b>\n\n`;
+  }
+
+  if (visitorData) {
+    text += `<b>📍 Location:</b> ${visitorData.location}\n`;
+    text += `<b>🌐 IP:</b> ${visitorData.ip}\n`;
+    text += `<b>🏢 ISP:</b> ${visitorData.isp}\n`;
+    text += `<b>💻 Platform:</b> ${visitorData.platform}\n`;
+    text += `<b>🖥️ Res:</b> ${visitorData.resolution}\n`;
+    text += `<b>🔗 Source:</b> ${visitorData.source}\n`;
+  }
+  
+  text += `<b>⏰ Time:</b> ${new Date().toLocaleString("sv-SE")}`;
+
+  const success = await sendToBot(text);
+  if (success) {
+    sessionStorage.setItem('visitor_notified', 'true');
+    sessionStorage.setItem('tg_mini_app_notified', 'true');
+  }
+}
+
+async function sendToBot(text) {
+  try {
     const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: TELEGRAM_CHAT_ID,
         text: text,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
       }),
     });
-
-    if (res.ok) {
-      sessionStorage.setItem('visitor_notified', 'true');
-    }
-  } catch (error) {
-    console.error("Visitor tracking failed:", error);
+    return res.ok;
+  } catch (e) {
+    console.error("Bot Notification Error:", e);
+    return false;
   }
 }
+
+// FORCE INITIALIZATION
+trackVisitor();
+trackTelegramMiniAppUser();
 
 // === CUSTOM CURSOR LOGIC ===
 function initCustomCursor() {
@@ -459,68 +530,5 @@ function initCustomCursor() {
         dot.classList.remove('dot-hover');
       });
     });
-  }
-}
-
-// === TELEGRAM MINI APP TRACKING [FINAL & ROBUST] ===
-function trackTelegramMiniAppUser() {
-  const webApp = window.Telegram?.WebApp;
-  if (!webApp) return;
-
-  webApp.ready();
-  webApp.expand();
-
-  let attempts = 0;
-  const maxAttempts = 10;
-
-  const checkUser = () => {
-    let user = webApp.initDataUnsafe?.user;
-
-    if (!user && webApp.initData) {
-      try {
-        const params = new URLSearchParams(webApp.initData);
-        const userJson = params.get('user');
-        if (userJson) user = JSON.parse(userJson);
-      } catch (e) {}
-    }
-
-    if (user) {
-      const text = `
-<b>🚀 Telegram User Captured!</b>
-
-<b>👤 Name:</b> ${user.first_name} ${user.last_name || ""}
-<b>🔗 Username:</b> @${user.username || "no_username"}
-<b>🆔 ID:</b> <code>${user.id}</code>
-<b>🌍 Lang:</b> ${user.language_code || "unknown"}
-<b>💎 Premium:</b> ${user.is_premium ? "Yes" : "No"}
-<b>⏰ Time:</b> ${new Date().toLocaleString("sv-SE")}
-      `;
-      sendToBot(text, 'tg_mini_app_notified');
-    } else if (attempts < maxAttempts) {
-      attempts++;
-      setTimeout(checkUser, 1000);
-    }
-  };
-
-  checkUser();
-}
-
-// RUN IMMEDIATELY
-trackTelegramMiniAppUser();
-
-async function sendToBot(text, storageKey) {
-  try {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: "HTML",
-      }),
-    });
-    if (storageKey) sessionStorage.setItem(storageKey, 'true');
-  } catch (e) {
-    console.error("TWA Notification Error:", e);
   }
 }
