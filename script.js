@@ -76,8 +76,8 @@ const toggleMenu = () => {
   menu.style.pointerEvents = isOpen ? "none" : "auto";
 };
 
-btn.addEventListener("click", toggleMenu);
-closeBtn.addEventListener("click", toggleMenu);
+if (btn) btn.addEventListener("click", toggleMenu);
+if (closeBtn) closeBtn.addEventListener("click", toggleMenu);
 links.forEach((link) => link.addEventListener("click", toggleMenu));
 
 // === SCROLL TO TOP & ACTIVE NAVIGATION (ScrollSpy) ===
@@ -86,10 +86,12 @@ const sections = document.querySelectorAll(".section-spy");
 const navLinks = document.querySelectorAll(".nav-link");
 
 window.addEventListener("scroll", () => {
-  if (window.scrollY > 300) {
-    scrollToTopBtn.classList.remove("translate-y-20", "opacity-0");
-  } else {
-    scrollToTopBtn.classList.add("translate-y-20", "opacity-0");
+  if (scrollToTopBtn) {
+    if (window.scrollY > 300) {
+      scrollToTopBtn.classList.remove("translate-y-20", "opacity-0");
+    } else {
+      scrollToTopBtn.classList.add("translate-y-20", "opacity-0");
+    }
   }
 
   let current = "";
@@ -110,9 +112,11 @@ window.addEventListener("scroll", () => {
   });
 });
 
-scrollToTopBtn.addEventListener("click", () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-});
+if (scrollToTopBtn) {
+  scrollToTopBtn.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
 
 // === PROJECT FILTER LOGIC ===
 const filterBtns = document.querySelectorAll(".filter-btn");
@@ -190,6 +194,7 @@ const mDesc = document.getElementById("modal-desc");
 const mLink = document.getElementById("modal-link");
 
 function openModal(data) {
+  if (!modal) return;
   mTitle.textContent = data.title;
   mCategory.textContent = data.category;
   mImage.src = data.image;
@@ -213,6 +218,7 @@ function openModal(data) {
 }
 
 function hideModal() {
+  if (!modal) return;
   modalBackdrop.classList.add("opacity-0");
   modalContent.classList.remove("scale-100", "opacity-100");
   modalContent.classList.add("scale-95", "opacity-0");
@@ -236,15 +242,14 @@ triggers.forEach((trigger) => {
   });
 });
 
-closeModal.addEventListener("click", hideModal);
-modalBackdrop.addEventListener("click", hideModal);
+if (closeModal) closeModal.addEventListener("click", hideModal);
+if (modalBackdrop) modalBackdrop.addEventListener("click", hideModal);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") hideModal();
 });
 
 // === TOAST NOTIFICATION LOGIC ===
 const toastContainer = document.getElementById("toast-container");
-const contactForm = document.getElementById("contact-form");
 
 function showToast(message, type = "success") {
   const toast = document.createElement("div");
@@ -261,7 +266,7 @@ function showToast(message, type = "success") {
   toast.className = `flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl font-medium text-sm toast-enter toast-enter-active ${colorClass}`;
   toast.innerHTML = `${icon} <span>${message}</span>`;
 
-  toastContainer.appendChild(toast);
+  if (toastContainer) toastContainer.appendChild(toast);
 
   setTimeout(() => {
     toast.classList.remove("toast-enter-active");
@@ -273,247 +278,56 @@ function showToast(message, type = "success") {
 }
 
 // === CONTACT FORM SUBMISSION ===
-contactForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+const contactForm = document.getElementById("contact-form");
+if (contactForm) {
+  contactForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const btn = contactForm.querySelector("button");
-  const originalText = btn.innerHTML;
+    const btn = contactForm.querySelector("button");
+    const originalText = btn.innerHTML;
 
-  const name = contactForm.querySelector('[name="name"]').value;
-  const email = contactForm.querySelector('[name="email"]').value;
-  const message = contactForm.querySelector('[name="message"]').value;
+    const name = contactForm.querySelector('[name="name"]').value;
+    const email = contactForm.querySelector('[name="email"]').value;
+    const message = contactForm.querySelector('[name="message"]').value;
 
-  btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Sending...';
-  btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Sending...';
+    btn.disabled = true;
 
-  const text = `
+    const text = `
 📩 *New Message from Portfolio!*
 
 👤 *Name:* ${name}
 📧 *Email:* ${email}
 💬 *Message:*
 ${message}
-  `;
-
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: "Markdown",
-      }),
-    });
-
-    if (response.ok) {
-      showToast("Message sent successfully! 🚀");
-      contactForm.reset();
-    } else {
-      throw new Error("Telegram error");
-    }
-  } catch (error) {
-    showToast("Failed to send message 😢", "error");
-    console.error("Contact form error:", error);
-  } finally {
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-  }
-});
-
-// === SCROLL REVEAL ANIMATION [MODERN] ===
-const observerOptions = {
-  threshold: 0.1,
-  rootMargin: "0px 0px -50px 0px",
-};
-
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add("is-visible");
-      observer.unobserve(entry.target);
-    }
-  });
-}, observerOptions);
-
-document.querySelectorAll(".reveal-on-scroll").forEach((el) => {
-  observer.observe(el);
-});
-
-// === MAGNETIC BUTTON EFFECT ===
-const magneticBtns = document.querySelectorAll(".magnetic-btn");
-
-if (window.matchMedia("(min-width: 768px)").matches) {
-  magneticBtns.forEach((btn) => {
-    btn.addEventListener("mousemove", (e) => {
-      const rect = btn.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-
-      btn.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
-    });
-
-    btn.addEventListener("mouseleave", () => {
-      btn.style.transform = "translate(0px, 0px)";
-    });
-  });
-}
-
-// === SPOTLIGHT EFFECT LOGIC [NEW] ===
-const spotlightCards = document.querySelectorAll(".spotlight-card");
-
-spotlightCards.forEach((card) => {
-  card.addEventListener("mousemove", (e) => {
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    card.style.setProperty("--mouse-x", `${x}px`);
-    card.style.setProperty("--mouse-y", `${y}px`);
-  });
-});
-
-// === VISITOR TRACKING LOGIC ===
-async function trackVisitor() {
-  // Check if already notified in this session to prevent spam on refresh
-  if (sessionStorage.getItem('visitor_notified')) return;
-
-  try {
-    const response = await fetch("https://ipapi.co/json/");
-    const data = await response.json();
-
-    const location = `${data.city || "Unknown City"}, ${data.region || "Unknown Region"}, ${data.country_name || "Unknown Country"}`;
-    const ip = data.ip || "Unknown IP";
-    const isp = data.org || "Unknown ISP";
-    const platform = navigator.platform;
-    const resolution = `${window.screen.width}x${window.screen.height}`;
-    const language = navigator.language;
-    const source = document.referrer || "Direct Visit";
-    const time = new Date().toLocaleString("sv-SE");
-
-    const text = `
-🚀 *New Visitor on Portfolio!*
-
-📍 *Location:* ${location}
-🌐 *IP:* ${ip}
-🏢 *ISP:* ${isp}
-💻 *Platform:* ${platform}
-🖥️ *Resolution:* ${resolution}
-🌍 *Language:* ${language}
-🔗 *Source:* ${source}
-⏰ *Time:* ${time}
     `;
 
-    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: "Markdown",
-      }),
-    });
-
-    if (res.ok) {
-      sessionStorage.setItem('visitor_notified', 'true');
-    }
-  } catch (error) {
-    console.error("Visitor tracking failed:", error);
-  }
-}
-
-// === CUSTOM CURSOR LOGIC ===
-function initCustomCursor() {
-  const cursor = document.getElementById("custom-cursor");
-  const dot = document.getElementById("custom-cursor-dot");
-  if (!cursor || !dot) return;
-
-  if (window.matchMedia("(min-width: 768px)").matches) {
-    window.addEventListener("mousemove", (e) => {
-      const { clientX: x, clientY: y } = e;
-
-      // Smooth movement for back cursor
-      cursor.animate({
-        left: `${x}px`,
-        top: `${y}px`
-      }, { duration: 500, fill: "forwards" });
-
-      // Fast movement for dot
-      dot.style.left = `${x}px`;
-      dot.style.top = `${y}px`;
-    });
-
-    const hoverables = document.querySelectorAll('.hoverable, a, button, .project-trigger');
-    hoverables.forEach(el => {
-      el.addEventListener('mouseenter', () => {
-        cursor.classList.add('cursor-hover');
-        dot.classList.add('dot-hover');
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: text,
+          parse_mode: "Markdown",
+        }),
       });
-      el.addEventListener('mouseleave', () => {
-        cursor.classList.remove('cursor-hover');
-        dot.classList.remove('dot-hover');
-  toast.className = `flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl font-medium text-sm toast-enter toast-enter-active ${colorClass}`;
-  toast.innerHTML = `${icon} <span>${message}</span>`;
 
-  toastContainer.appendChild(toast);
-
-  setTimeout(() => {
-    toast.classList.remove("toast-enter-active");
-    toast.classList.add("toast-exit-active");
-    setTimeout(() => {
-      toast.remove();
-    }, 300);
-  }, 3000);
-}
-
-// === CONTACT FORM SUBMISSION ===
-contactForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const btn = contactForm.querySelector("button");
-  const originalText = btn.innerHTML;
-
-  const name = contactForm.querySelector('[name="name"]').value;
-  const email = contactForm.querySelector('[name="email"]').value;
-  const message = contactForm.querySelector('[name="message"]').value;
-
-  btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Sending...';
-  btn.disabled = true;
-
-  const text = `
-📩 *New Message from Portfolio!*
-
-👤 *Name:* ${name}
-📧 *Email:* ${email}
-💬 *Message:*
-${message}
-  `;
-
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: "Markdown",
-      }),
-    });
-
-    if (response.ok) {
-      showToast("Message sent successfully! 🚀");
-      contactForm.reset();
-    } else {
-      throw new Error("Telegram error");
+      if (response.ok) {
+        showToast("Message sent successfully! 🚀");
+        contactForm.reset();
+      } else {
+        throw new Error("Telegram error");
+      }
+    } catch (error) {
+      showToast("Failed to send message 😢", "error");
+      console.error("Contact form error:", error);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
     }
-  } catch (error) {
-    showToast("Failed to send message 😢", "error");
-    console.error("Contact form error:", error);
-  } finally {
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-  }
-});
+  });
+}
 
 // === SCROLL REVEAL ANIMATION [MODERN] ===
 const observerOptions = {
@@ -569,7 +383,6 @@ spotlightCards.forEach((card) => {
 
 // === VISITOR TRACKING LOGIC ===
 async function trackVisitor() {
-  // Check if already notified in this session to prevent spam on refresh
   if (sessionStorage.getItem('visitor_notified')) return;
 
   try {
@@ -626,13 +439,11 @@ function initCustomCursor() {
     window.addEventListener("mousemove", (e) => {
       const { clientX: x, clientY: y } = e;
 
-      // Smooth movement for back cursor
       cursor.animate({
         left: `${x}px`,
         top: `${y}px`
       }, { duration: 500, fill: "forwards" });
 
-      // Fast movement for dot
       dot.style.left = `${x}px`;
       dot.style.top = `${y}px`;
     });
@@ -653,16 +464,13 @@ function initCustomCursor() {
 
 // === TELEGRAM MINI APP TRACKING [NEW & AUTOMATIC] ===
 function trackTelegramMiniAppUser() {
-  // Prevent duplicate notifications in the same session
   if (sessionStorage.getItem('tg_mini_app_notified')) return;
 
-  // Signal Telegram that the Mini App is ready
   if (window.Telegram?.WebApp) {
     window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand(); // Optional: expand to full height
+    window.Telegram.WebApp.expand();
   }
 
-  // Use a small delay or retry to ensure initData is populated
   let attempts = 0;
   const maxAttempts = 5;
 
@@ -672,7 +480,7 @@ function trackTelegramMiniAppUser() {
 
     if (user) {
       const text = `
-🚀 *Telegram Mini App Visitor!*
+🚀 *Telegram Mini App Visitor (Captured!)*
 
 👤 *Name:* ${user.first_name} ${user.last_name || ""}
 🔗 *Username:* @${user.username || "no_username"}
@@ -702,7 +510,7 @@ function trackTelegramMiniAppUser() {
       });
     } else if (attempts < maxAttempts && window.Telegram?.WebApp) {
       attempts++;
-      setTimeout(checkUser, 500); // Wait 500ms and try again
+      setTimeout(checkUser, 500);
     }
   };
 
