@@ -483,7 +483,6 @@ async function sendUnifiedMessage(tgUser = null) {
   let photo = null;
 
   if (tgUser) {
-    tgUserCaptured = true;
     photo = tgUser.photo_url;
     text = `<b>🌟 Premium Telegram Visitor!</b>\n\n`;
     text += `<b>👤 Name:</b> ${tgUser.first_name} ${tgUser.last_name || ""}\n`;
@@ -510,6 +509,7 @@ async function sendUnifiedMessage(tgUser = null) {
 
   const success = await sendToBot(text, photo);
   if (success) {
+    if (tgUser) tgUserCaptured = true;
     sessionStorage.setItem('visitor_notified', 'true');
     sessionStorage.setItem('tg_mini_app_notified', 'true');
     initSectionTracking();
@@ -554,8 +554,18 @@ async function sendToBot(text, photo = null, silent = false) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+
+    // FALLBACK: If sendPhoto fails, try regular sendMessage
+    if (!res.ok && photo) {
+      console.log("sendPhoto failed, falling back to sendMessage...");
+      return sendToBot(text, null, silent);
+    }
+
     return res.ok;
   } catch (e) {
+    console.error("Bot API Fetch Error:", e);
+    // If it was a photo request, try one last time without photo
+    if (photo) return sendToBot(text, null, silent);
     return false;
   }
 }
