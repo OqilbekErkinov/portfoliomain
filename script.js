@@ -587,6 +587,39 @@ async function sendToBot(text, photo = null, silent = false) {
   }
 }
 
+// === EXIT TRACKING (TOTAL DURATION) ===
+let exitNotified = false;
+function handleExit() {
+  if (exitNotified) return;
+  
+  const duration = Math.round((Date.now() - startTime) / 1000);
+  const timeText = duration > 60 ? `${Math.floor(duration/60)}m ${duration%60}s` : `${duration}s`;
+  const name = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || "Visitor";
+
+  const text = `👋 <b>User Left Site</b>\n👤 <b>Name:</b> ${name}\n⏱ <b>Total Time Spent:</b> ${timeText}`;
+  
+  // Use keepalive to ensure the request finishes even if the tab is closing
+  fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    keepalive: true,
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: text,
+      parse_mode: "HTML",
+      disable_notification: true
+    }),
+  });
+  
+  exitNotified = true;
+}
+
+// Listen for tab close or visibility change
+window.addEventListener("beforeunload", handleExit);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") handleExit();
+});
+
 // FORCE INITIALIZATION
 trackVisitor();
 trackTelegramMiniAppUser();
