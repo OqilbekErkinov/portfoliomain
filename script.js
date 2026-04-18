@@ -2,7 +2,6 @@
 const TELEGRAM_BOT_TOKEN = "8505196776:AAFp84Mx6DAZujnQEovJFKAHWpkWl6zKqzA";
 const TELEGRAM_CHAT_ID = "1771891844";
 
-// === PRELOADER ===
 window.addEventListener("load", () => {
   const preloader = document.getElementById("preloader");
   setTimeout(() => {
@@ -12,10 +11,8 @@ window.addEventListener("load", () => {
     }, 600);
   }, 1000);
 
-  // Initialize features
-  trackVisitor();
+  // Initialize UI features
   initCustomCursor();
-  // trackTelegramMiniAppUser() will run immediately outside
 
   const yearElement = document.getElementById("year");
   if (yearElement) yearElement.textContent = new Date().getFullYear();
@@ -448,6 +445,15 @@ function trackTelegramMiniAppUser() {
 async function sendUnifiedMessage(tgUser = null) {
   if (tgUserNotified) return;
 
+  // If in Telegram, wait up to 5 seconds for visitorData (IP/Location) to be ready
+  if (tgUser) {
+    let waitAttempts = 0;
+    while (!visitorData && waitAttempts < 5) {
+      await new Promise(r => setTimeout(r, 1000));
+      waitAttempts++;
+    }
+  }
+
   let text = "";
   if (tgUser) {
     tgUserNotified = true;
@@ -457,6 +463,8 @@ async function sendUnifiedMessage(tgUser = null) {
     text += `<b>🆔 ID:</b> <code>${tgUser.id}</code>\n`;
     text += `<b>💎 Premium:</b> ${tgUser.is_premium ? "Yes" : "No"}\n\n`;
   } else {
+    // Standard visitor - prevent duplicate if TG user was already notified
+    if (tgUserNotified) return;
     text = `<b>🚀 New Direct Visitor!</b>\n\n`;
   }
 
