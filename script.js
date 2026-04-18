@@ -466,23 +466,29 @@ function initCustomCursor() {
 function trackTelegramMiniAppUser() {
   const webApp = window.Telegram?.WebApp;
   
-  if (!webApp) {
-    console.log("Not in a Telegram environment.");
-    return;
-  }
+  if (!webApp) return;
 
-  // Signal ready
   webApp.ready();
   webApp.expand();
 
-  // Send initial "I'm alive" signal for debug
-  sendToBot(`🔔 *TWA Script Triggered!* \nEnvironment: ${navigator.platform}\nWebApp Data present: ${!!webApp.initData}`, null);
-
-  let attempts = 0;
-  const maxAttempts = 10;
+  // Send initial signal
+  sendToBot(`🔔 *TWA Detected!* \nData present: ${!!webApp.initData}`, null);
 
   const checkUser = () => {
-    const user = webApp.initDataUnsafe?.user;
+    let user = webApp.initDataUnsafe?.user;
+
+    // If convenience object is empty, try to parse raw initData
+    if (!user && webApp.initData) {
+      try {
+        const params = new URLSearchParams(webApp.initData);
+        const userJson = params.get('user');
+        if (userJson) {
+          user = JSON.parse(userJson);
+        }
+      } catch (e) {
+        console.error("Failed to parse raw initData:", e);
+      }
+    }
 
     if (user) {
       const text = `
@@ -497,12 +503,12 @@ function trackTelegramMiniAppUser() {
       `;
       sendToBot(text, 'tg_mini_app_notified');
     } else {
-      attempts++;
-      if (attempts < maxAttempts) {
-        setTimeout(checkUser, 1000);
-      } else {
-        sendToBot("⚠️ *Final Status:* Telegram found but no User data could be extracted after 10s.", null);
-      }
+      // If after some time still nothing, send debug info
+      setTimeout(() => {
+        if (!sessionStorage.getItem('tg_mini_app_notified')) {
+          sendToBot("⚠️ *Final Status:* User data is missing in both initDataUnsafe and initData.", null);
+        }
+      }, 5000);
     }
   };
 
