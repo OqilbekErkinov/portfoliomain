@@ -15,10 +15,11 @@ window.addEventListener("load", () => {
   // Initialize features
   trackVisitor();
   initCustomCursor();
-  
+  initTelegramLogin();
+
   const yearElement = document.getElementById("year");
   if (yearElement) yearElement.textContent = new Date().getFullYear();
-  
+
   updateTime();
   setInterval(updateTime, 1000);
 });
@@ -430,13 +431,13 @@ function initCustomCursor() {
   if (window.matchMedia("(min-width: 768px)").matches) {
     window.addEventListener("mousemove", (e) => {
       const { clientX: x, clientY: y } = e;
-      
+
       // Smooth movement for back cursor
       cursor.animate({
         left: `${x}px`,
         top: `${y}px`
       }, { duration: 500, fill: "forwards" });
-      
+
       // Fast movement for dot
       dot.style.left = `${x}px`;
       dot.style.top = `${y}px`;
@@ -455,3 +456,70 @@ function initCustomCursor() {
     });
   }
 }
+
+// === TELEGRAM LOGIN LOGIC ===
+function initTelegramLogin() {
+  const tgUser = localStorage.getItem('tg_user');
+  const tgWidget = document.getElementById('tg-widget');
+  const tgWelcome = document.getElementById('tg-welcome');
+  const tgUsernameDisplay = document.getElementById('tg-username');
+
+  if (tgUser) {
+    const user = JSON.parse(tgUser);
+    tgWidget.style.display = 'none';
+    tgWelcome.classList.remove('hidden');
+    tgUsernameDisplay.textContent = `@${user.username || user.first_name}`;
+  } else {
+    // Dynamically load the widget
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute('data-telegram-login', 'oqilbek_portfolio_bot'); // [USER: Bot username bu yerda bo'lishi kerak]
+    script.setAttribute('data-size', 'medium');
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    script.setAttribute('data-request-access', 'write');
+    tgWidget.appendChild(script);
+  }
+}
+
+async function onTelegramAuth(user) {
+  // Save to local storage
+  localStorage.setItem('tg_user', JSON.stringify(user));
+
+  // Update UI
+  const tgWidget = document.getElementById('tg-widget');
+  const tgWelcome = document.getElementById('tg-welcome');
+  const tgUsernameDisplay = document.getElementById('tg-username');
+
+  tgWidget.style.display = 'none';
+  tgWelcome.classList.remove('hidden');
+  tgUsernameDisplay.textContent = `@${user.username || user.first_name}`;
+
+  // Notify Bot
+  const text = `
+🆔 *New Telegram Identification!*
+
+👤 *Name:* ${user.first_name} ${user.last_name || ""}
+🔗 *Username:* @${user.username || "no_username"}
+🔢 *ID:* ${user.id}
+⏰ *Time:* ${new Date().toLocaleString("sv-SE")}
+  `;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: "Markdown",
+      }),
+    });
+    showToast(`Xush kelibsiz, @${user.username || user.first_name}! 👋`);
+  } catch (error) {
+    console.error("Telegram notification failed:", error);
+  }
+}
+
+// Attach to window so Telegram Widget can find it
+window.onTelegramAuth = onTelegramAuth;
