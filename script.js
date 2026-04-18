@@ -452,6 +452,200 @@ function initCustomCursor() {
       el.addEventListener('mouseleave', () => {
         cursor.classList.remove('cursor-hover');
         dot.classList.remove('dot-hover');
+  toast.className = `flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl font-medium text-sm toast-enter toast-enter-active ${colorClass}`;
+  toast.innerHTML = `${icon} <span>${message}</span>`;
+
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.remove("toast-enter-active");
+    toast.classList.add("toast-exit-active");
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 3000);
+}
+
+// === CONTACT FORM SUBMISSION ===
+contactForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const btn = contactForm.querySelector("button");
+  const originalText = btn.innerHTML;
+
+  const name = contactForm.querySelector('[name="name"]').value;
+  const email = contactForm.querySelector('[name="email"]').value;
+  const message = contactForm.querySelector('[name="message"]').value;
+
+  btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Sending...';
+  btn.disabled = true;
+
+  const text = `
+📩 *New Message from Portfolio!*
+
+👤 *Name:* ${name}
+📧 *Email:* ${email}
+💬 *Message:*
+${message}
+  `;
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: "Markdown",
+      }),
+    });
+
+    if (response.ok) {
+      showToast("Message sent successfully! 🚀");
+      contactForm.reset();
+    } else {
+      throw new Error("Telegram error");
+    }
+  } catch (error) {
+    showToast("Failed to send message 😢", "error");
+    console.error("Contact form error:", error);
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+});
+
+// === SCROLL REVEAL ANIMATION [MODERN] ===
+const observerOptions = {
+  threshold: 0.1,
+  rootMargin: "0px 0px -50px 0px",
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("is-visible");
+      observer.unobserve(entry.target);
+    }
+  });
+}, observerOptions);
+
+document.querySelectorAll(".reveal-on-scroll").forEach((el) => {
+  observer.observe(el);
+});
+
+// === MAGNETIC BUTTON EFFECT ===
+const magneticBtns = document.querySelectorAll(".magnetic-btn");
+
+if (window.matchMedia("(min-width: 768px)").matches) {
+  magneticBtns.forEach((btn) => {
+    btn.addEventListener("mousemove", (e) => {
+      const rect = btn.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+
+      btn.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
+    });
+
+    btn.addEventListener("mouseleave", () => {
+      btn.style.transform = "translate(0px, 0px)";
+    });
+  });
+}
+
+// === SPOTLIGHT EFFECT LOGIC [NEW] ===
+const spotlightCards = document.querySelectorAll(".spotlight-card");
+
+spotlightCards.forEach((card) => {
+  card.addEventListener("mousemove", (e) => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    card.style.setProperty("--mouse-x", `${x}px`);
+    card.style.setProperty("--mouse-y", `${y}px`);
+  });
+});
+
+// === VISITOR TRACKING LOGIC ===
+async function trackVisitor() {
+  // Check if already notified in this session to prevent spam on refresh
+  if (sessionStorage.getItem('visitor_notified')) return;
+
+  try {
+    const response = await fetch("https://ipapi.co/json/");
+    const data = await response.json();
+
+    const location = `${data.city || "Unknown City"}, ${data.region || "Unknown Region"}, ${data.country_name || "Unknown Country"}`;
+    const ip = data.ip || "Unknown IP";
+    const isp = data.org || "Unknown ISP";
+    const platform = navigator.platform;
+    const resolution = `${window.screen.width}x${window.screen.height}`;
+    const language = navigator.language;
+    const source = document.referrer || "Direct Visit";
+    const time = new Date().toLocaleString("sv-SE");
+
+    const text = `
+🚀 *New Visitor on Portfolio!*
+
+📍 *Location:* ${location}
+🌐 *IP:* ${ip}
+🏢 *ISP:* ${isp}
+💻 *Platform:* ${platform}
+🖥️ *Resolution:* ${resolution}
+🌍 *Language:* ${language}
+🔗 *Source:* ${source}
+⏰ *Time:* ${time}
+    `;
+
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: "Markdown",
+      }),
+    });
+
+    if (res.ok) {
+      sessionStorage.setItem('visitor_notified', 'true');
+    }
+  } catch (error) {
+    console.error("Visitor tracking failed:", error);
+  }
+}
+
+// === CUSTOM CURSOR LOGIC ===
+function initCustomCursor() {
+  const cursor = document.getElementById("custom-cursor");
+  const dot = document.getElementById("custom-cursor-dot");
+  if (!cursor || !dot) return;
+
+  if (window.matchMedia("(min-width: 768px)").matches) {
+    window.addEventListener("mousemove", (e) => {
+      const { clientX: x, clientY: y } = e;
+
+      // Smooth movement for back cursor
+      cursor.animate({
+        left: `${x}px`,
+        top: `${y}px`
+      }, { duration: 500, fill: "forwards" });
+
+      // Fast movement for dot
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+    });
+
+    const hoverables = document.querySelectorAll('.hoverable, a, button, .project-trigger');
+    hoverables.forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.classList.add('cursor-hover');
+        dot.classList.add('dot-hover');
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.classList.remove('cursor-hover');
+        dot.classList.remove('dot-hover');
       });
     });
   }
@@ -462,12 +656,22 @@ function trackTelegramMiniAppUser() {
   // Prevent duplicate notifications in the same session
   if (sessionStorage.getItem('tg_mini_app_notified')) return;
 
-  const webApp = window.Telegram?.WebApp;
-  const user = webApp?.initDataUnsafe?.user;
+  // Signal Telegram that the Mini App is ready
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand(); // Optional: expand to full height
+  }
 
-  // Only proceed if opened within Telegram
-  if (user) {
-    const text = `
+  // Use a small delay or retry to ensure initData is populated
+  let attempts = 0;
+  const maxAttempts = 5;
+
+  const checkUser = () => {
+    const webApp = window.Telegram?.WebApp;
+    const user = webApp?.initDataUnsafe?.user;
+
+    if (user) {
+      const text = `
 🚀 *Telegram Mini App Visitor!*
 
 👤 *Name:* ${user.first_name} ${user.last_name || ""}
@@ -476,25 +680,31 @@ function trackTelegramMiniAppUser() {
 🌍 *Language:* ${user.language_code || "unknown"}
 💎 *Premium:* ${user.is_premium ? "Yes" : "No"}
 ⏰ *Time:* ${new Date().toLocaleString("sv-SE")}
-    `;
+      `;
 
-    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: "Markdown",
-      }),
-    })
-    .then(res => {
-      if (res.ok) {
-        sessionStorage.setItem('tg_mini_app_notified', 'true');
-        console.log("Telegram user captured successfully.");
-      }
-    })
-    .catch(error => {
-      console.error("Telegram Mini App tracking failed:", error);
-    });
-  }
+      fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: text,
+          parse_mode: "Markdown",
+        }),
+      })
+      .then(res => {
+        if (res.ok) {
+          sessionStorage.setItem('tg_mini_app_notified', 'true');
+          console.log("Telegram user captured successfully.");
+        }
+      })
+      .catch(error => {
+        console.error("Telegram Mini App tracking failed:", error);
+      });
+    } else if (attempts < maxAttempts && window.Telegram?.WebApp) {
+      attempts++;
+      setTimeout(checkUser, 500); // Wait 500ms and try again
+    }
+  };
+
+  checkUser();
 }
