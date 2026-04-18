@@ -461,6 +461,7 @@ async function sendUnifiedMessage(tgUser = null) {
     text += `<b>👤 Name:</b> ${tgUser.first_name} ${tgUser.last_name || ""}\n`;
     text += `<b>🔗 Username:</b> @${tgUser.username || "no_username"}\n`;
     text += `<b>🆔 ID:</b> <code>${tgUser.id}</code>\n`;
+    text += `<b>🌍 Lang:</b> ${tgUser.language_code || "unknown"}\n`;
     text += `<b>💎 Premium:</b> ${tgUser.is_premium ? "Yes" : "No"}\n\n`;
   } else {
     // Standard visitor - prevent duplicate if TG user was already notified
@@ -474,6 +475,7 @@ async function sendUnifiedMessage(tgUser = null) {
     text += `<b>🏢 ISP:</b> ${visitorData.isp}\n`;
     text += `<b>💻 Platform:</b> ${visitorData.platform}\n`;
     text += `<b>🖥️ Res:</b> ${visitorData.resolution}\n`;
+    text += `<b>🌍 Language:</b> ${visitorData.language}\n`;
     text += `<b>🔗 Source:</b> ${visitorData.source}\n`;
   }
   
