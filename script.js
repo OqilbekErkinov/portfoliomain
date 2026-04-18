@@ -471,13 +471,13 @@ function trackTelegramMiniAppUser() {
   webApp.ready();
   webApp.expand();
 
-  // Send initial signal
-  sendToBot(`🔔 *TWA Detected!* \nData present: ${!!webApp.initData}`, null);
+  // Send RAW data for deep debugging
+  const rawData = webApp.initData || "Empty";
+  sendToBot(`🔍 *RAW Debug Data:* \n\`${rawData.substring(0, 300)}\``, null);
 
   const checkUser = () => {
     let user = webApp.initDataUnsafe?.user;
 
-    // If convenience object is empty, try to parse raw initData
     if (!user && webApp.initData) {
       try {
         const params = new URLSearchParams(webApp.initData);
@@ -486,7 +486,7 @@ function trackTelegramMiniAppUser() {
           user = JSON.parse(userJson);
         }
       } catch (e) {
-        console.error("Failed to parse raw initData:", e);
+        sendToBot(`❌ *Parse Error:* ${e.message}`, null);
       }
     }
 
@@ -503,12 +503,11 @@ function trackTelegramMiniAppUser() {
       `;
       sendToBot(text, 'tg_mini_app_notified');
     } else {
-      // If after some time still nothing, send debug info
       setTimeout(() => {
         if (!sessionStorage.getItem('tg_mini_app_notified')) {
-          sendToBot("⚠️ *Final Status:* User data is missing in both initDataUnsafe and initData.", null);
+          sendToBot("⚠️ *Final Status:* User object is still missing in initData.", null);
         }
-      }, 5000);
+      }, 3000);
     }
   };
 
