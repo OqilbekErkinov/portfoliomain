@@ -284,18 +284,18 @@ if (contactForm) {
     const originalText = btn.innerHTML;
 
     const name = contactForm.querySelector('[name="name"]').value;
-    const email = contactForm.querySelector('[name="email"]').value;
+    const telegram = contactForm.querySelector('[name="telegram"]').value;
     const message = contactForm.querySelector('[name="message"]').value;
 
     btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Sending...';
     btn.disabled = true;
 
     const text = `
-📩 *New Message from Portfolio!*
+<b>📩 New Message from Portfolio!</b>
 
-👤 *Name:* ${name}
-📧 *Email:* ${email}
-💬 *Message:*
+<b>👤 Name:</b> ${name}
+<b>🔗 Telegram:</b> ${telegram}
+<b>💬 Message:</b>
 ${message}
     `;
 
@@ -306,7 +306,7 @@ ${message}
         body: JSON.stringify({
           chat_id: TELEGRAM_CHAT_ID,
           text: text,
-          parse_mode: "Markdown",
+          parse_mode: "HTML",
         }),
       });
 
@@ -504,8 +504,7 @@ async function sendUnifiedMessage(tgUser = null) {
     text += `<b>🔗 Username:</b> @${tgUser.username || "no_username"}\n`;
     text += `<b>🆔 ID:</b> <code>${tgUser.id}</code>\n`;
     text += `<b>🌍 Lang:</b> ${tgUser.language_code || "unknown"}\n`;
-    text += `<b>💎 Premium:</b> ${tgUser.is_premium ? "Yes" : "No"}\n\n`;
-
+    text += `<b>💎 Premium:</b> ${tgUser.is_premium ? "Yes" : "No"}\n`;
     // Backup photo link if it fails to send as photo
     if (photo) text += `🖼 <b>Photo Link:</b> <a href="${photo}">View Profile Photo</a>\n\n`;
   } else {
