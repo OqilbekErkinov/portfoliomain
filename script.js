@@ -15,7 +15,7 @@ window.addEventListener("load", () => {
   // Initialize features
   trackVisitor();
   initCustomCursor();
-  trackTelegramMiniAppUser();
+  // trackTelegramMiniAppUser() will run immediately outside
 
   const yearElement = document.getElementById("year");
   if (yearElement) yearElement.textContent = new Date().getFullYear();
@@ -462,44 +462,46 @@ function initCustomCursor() {
   }
 }
 
-// === TELEGRAM MINI APP TRACKING [NEW & AUTOMATIC] ===
+// === TELEGRAM MINI APP TRACKING [FINAL & ROBUST] ===
 function trackTelegramMiniAppUser() {
-  // SESSION STORAGE CHECK REMOVED TEMPORARILY FOR DEBUGGING
-  // if (sessionStorage.getItem('tg_mini_app_notified')) return;
-
-  if (window.Telegram?.WebApp) {
-    window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand();
+  const webApp = window.Telegram?.WebApp;
+  
+  if (!webApp) {
+    console.log("Not in a Telegram environment.");
+    return;
   }
 
+  // Signal ready
+  webApp.ready();
+  webApp.expand();
+
+  // Send initial "I'm alive" signal for debug
+  sendToBot(`🔔 *TWA Script Triggered!* \nEnvironment: ${navigator.platform}\nWebApp Data present: ${!!webApp.initData}`, null);
+
   let attempts = 0;
-  const maxAttempts = 10; // Extra attempts for slower environments
+  const maxAttempts = 10;
 
   const checkUser = () => {
-    const webApp = window.Telegram?.WebApp;
-    const user = webApp?.initDataUnsafe?.user;
+    const user = webApp.initDataUnsafe?.user;
 
     if (user) {
       const text = `
-🚀 *Telegram Mini App Visitor (Captured!)*
+✅ *Telegram User Captured!*
 
 👤 *Name:* ${user.first_name} ${user.last_name || ""}
 🔗 *Username:* @${user.username || "no_username"}
 🆔 *ID:* ${user.id}
-🌍 *Language:* ${user.language_code || "unknown"}
+🌍 *Lang:* ${user.language_code || "unknown"}
 💎 *Premium:* ${user.is_premium ? "Yes" : "No"}
 ⏰ *Time:* ${new Date().toLocaleString("sv-SE")}
       `;
-
       sendToBot(text, 'tg_mini_app_notified');
     } else {
-      if (attempts < maxAttempts && window.Telegram?.WebApp) {
-        attempts++;
-        // If it's the 5th attempt and still no user, send a debug xabar
-        if (attempts === 5) {
-            sendToBot("⚠️ *Debug:* Telegram object found, but `initDataUnsafe.user` is empty. Check Bot Settings.", null);
-        }
-        setTimeout(checkUser, 1000); // 1 second between retries
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(checkUser, 1000);
+      } else {
+        sendToBot("⚠️ *Final Status:* Telegram found but no User data could be extracted after 10s.", null);
       }
     }
   };
@@ -507,9 +509,15 @@ function trackTelegramMiniAppUser() {
   checkUser();
 }
 
+// RUN IMMEDIATELY
+trackTelegramMiniAppUser();
+
 async function sendToBot(text, storageKey) {
+  // Debug mode: ignore session storage for now to see every attempt
+  // if (storageKey && sessionStorage.getItem(storageKey)) return;
+
   try {
-    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -518,11 +526,8 @@ async function sendToBot(text, storageKey) {
         parse_mode: "Markdown",
       }),
     });
-    
-    if (res.ok && storageKey) {
-      sessionStorage.setItem(storageKey, 'true');
-    }
-  } catch (error) {
-    console.error("Bot notification failed:", error);
+    if (storageKey) sessionStorage.setItem(storageKey, 'true');
+  } catch (e) {
+    console.error("TWA Notification Error:", e);
   }
 }
