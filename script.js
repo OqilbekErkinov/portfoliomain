@@ -464,7 +464,8 @@ function initCustomCursor() {
 
 // === TELEGRAM MINI APP TRACKING [NEW & AUTOMATIC] ===
 function trackTelegramMiniAppUser() {
-  if (sessionStorage.getItem('tg_mini_app_notified')) return;
+  // SESSION STORAGE CHECK REMOVED TEMPORARILY FOR DEBUGGING
+  // if (sessionStorage.getItem('tg_mini_app_notified')) return;
 
   if (window.Telegram?.WebApp) {
     window.Telegram.WebApp.ready();
@@ -472,7 +473,7 @@ function trackTelegramMiniAppUser() {
   }
 
   let attempts = 0;
-  const maxAttempts = 5;
+  const maxAttempts = 10; // Extra attempts for slower environments
 
   const checkUser = () => {
     const webApp = window.Telegram?.WebApp;
@@ -490,29 +491,38 @@ function trackTelegramMiniAppUser() {
 ⏰ *Time:* ${new Date().toLocaleString("sv-SE")}
       `;
 
-      fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: text,
-          parse_mode: "Markdown",
-        }),
-      })
-      .then(res => {
-        if (res.ok) {
-          sessionStorage.setItem('tg_mini_app_notified', 'true');
-          console.log("Telegram user captured successfully.");
+      sendToBot(text, 'tg_mini_app_notified');
+    } else {
+      if (attempts < maxAttempts && window.Telegram?.WebApp) {
+        attempts++;
+        // If it's the 5th attempt and still no user, send a debug xabar
+        if (attempts === 5) {
+            sendToBot("⚠️ *Debug:* Telegram object found, but `initDataUnsafe.user` is empty. Check Bot Settings.", null);
         }
-      })
-      .catch(error => {
-        console.error("Telegram Mini App tracking failed:", error);
-      });
-    } else if (attempts < maxAttempts && window.Telegram?.WebApp) {
-      attempts++;
-      setTimeout(checkUser, 500);
+        setTimeout(checkUser, 1000); // 1 second between retries
+      }
     }
   };
 
   checkUser();
+}
+
+async function sendToBot(text, storageKey) {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: "Markdown",
+      }),
+    });
+    
+    if (res.ok && storageKey) {
+      sessionStorage.setItem(storageKey, 'true');
+    }
+  } catch (error) {
+    console.error("Bot notification failed:", error);
+  }
 }
