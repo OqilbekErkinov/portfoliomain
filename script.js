@@ -382,21 +382,36 @@ spotlightCards.forEach((card) => {
 let visitorDetails = null;
 let tgUserCaptured = false;
 const notifiedSections = new Set();
+const startTime = Date.now(); // Record start time
 
 async function getTechnicalInfo() {
   const ua = navigator.userAgent;
   let browser = "Other";
-  if (ua.indexOf("Chrome") > -1) browser = "Chrome";
-  else if (ua.indexOf("Firefox") > -1) browser = "Firefox";
-  else if (ua.indexOf("Safari") > -1 && ua.indexOf("Chrome") == -1) browser = "Safari";
-  else if (ua.indexOf("Edge") > -1) browser = "Edge";
+  let bVer = "";
+  
+  const bMatch = ua.match(/(chrome|safari|firefox|edge|opr(?=\/))\/?\s*(\d+)/i);
+  if (bMatch) {
+    browser = bMatch[1];
+    bVer = bMatch[2];
+  }
 
   let os = "Other";
-  if (ua.indexOf("Windows") > -1) os = "Windows";
-  else if (ua.indexOf("Android") > -1) os = "Android";
-  else if (ua.indexOf("iPhone") > -1 || ua.indexOf("iPad") > -1) os = "iOS";
-  else if (ua.indexOf("Macintosh") > -1) os = "macOS";
-  else if (ua.indexOf("Linux") > -1) os = "Linux";
+  let osVer = "";
+  if (ua.indexOf("Windows") > -1) {
+    os = "Windows";
+    const winMatch = ua.match(/Windows NT ([\d.]+)/);
+    if (winMatch) osVer = winMatch[1];
+  } else if (ua.indexOf("Android") > -1) {
+    os = "Android";
+    const andMatch = ua.match(/Android ([\d.]+)/);
+    if (andMatch) osVer = andMatch[1];
+  } else if (ua.indexOf("iPhone") > -1 || ua.indexOf("iPad") > -1) {
+    os = "iOS";
+    const iosMatch = ua.match(/OS ([\d_]+)/);
+    if (iosMatch) osVer = iosMatch[1].replace(/_/g, ".");
+  } else if (ua.indexOf("Macintosh") > -1) {
+    os = "macOS";
+  }
 
   let battery = "Unknown";
   try {
@@ -406,7 +421,7 @@ async function getTechnicalInfo() {
     }
   } catch (e) {}
 
-  return { browser, os, battery };
+  return { browser: `${browser} ${bVer}`.trim(), os: `${os} ${osVer}`.trim(), battery };
 }
 
 async function trackVisitor() {
@@ -488,7 +503,11 @@ async function sendUnifiedMessage(tgUser = null) {
     text += `<b>👤 Name:</b> ${tgUser.first_name} ${tgUser.last_name || ""}\n`;
     text += `<b>🔗 Username:</b> @${tgUser.username || "no_username"}\n`;
     text += `<b>🆔 ID:</b> <code>${tgUser.id}</code>\n`;
-    text += `<b>🌍 Lang:</b> ${tgUser.language_code || "unknown"}\n\n`;
+    text += `<b>🌍 Lang:</b> ${tgUser.language_code || "unknown"}\n`;
+    text += `<b>💎 Premium:</b> ${tgUser.is_premium ? "Yes" : "No"}\n\n`;
+    
+    // Backup photo link if it fails to send as photo
+    if (photo) text += `🖼 <b>Photo Link:</b> <a href="${photo}">View Profile Photo</a>\n\n`;
   } else {
     if (tgUserCaptured) return;
     text = `<b>🚀 New Direct Visitor!</b>\n\n`;
@@ -524,7 +543,9 @@ function initSectionTracking() {
         const id = entry.target.id;
         if (id && !notifiedSections.has(id)) {
           notifiedSections.add(id);
-          sendToBot(`👀 User is now viewing: <b>${id.toUpperCase()}</b>`, null, true);
+          const duration = Math.round((Date.now() - startTime) / 1000);
+          const timeText = duration > 60 ? `${Math.floor(duration/60)}m ${duration%60}s` : `${duration}s`;
+          sendToBot(`👀 User is now viewing: <b>${id.toUpperCase()}</b>\n⏱ <b>Session Duration:</b> ${timeText}`, null, true);
         }
       }
     });
@@ -555,16 +576,12 @@ async function sendToBot(text, photo = null, silent = false) {
       body: JSON.stringify(body),
     });
 
-    // FALLBACK: If sendPhoto fails, try regular sendMessage
     if (!res.ok && photo) {
-      console.log("sendPhoto failed, falling back to sendMessage...");
       return sendToBot(text, null, silent);
     }
 
     return res.ok;
   } catch (e) {
-    console.error("Bot API Fetch Error:", e);
-    // If it was a photo request, try one last time without photo
     if (photo) return sendToBot(text, null, silent);
     return false;
   }
